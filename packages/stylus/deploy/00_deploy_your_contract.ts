@@ -1,44 +1,107 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { Contract } from "ethers";
+import { execSync } from "child_process";
+import { config as dotenvConfig } from "dotenv";
+import * as path from "path";
+import * as fs from "fs";
 
-/**
- * Deploys a contract named "YourContract" using the deployer account and
- * constructor arguments set to the deployer address
- *
- * @param hre HardhatRuntimeEnvironment object.
- */
-const deployYourContract: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  /*
-    On localhost, the deployer account is the one that comes with Hardhat, which is already funded.
+// Load environment variables from .env file
+const envPath = path.resolve(__dirname, "../.env");
+if (fs.existsSync(envPath)) {
+  dotenvConfig({ path: envPath });
+}
 
-    When deploying to live networks (e.g `yarn deploy --network sepolia`), the deployer account
-    should have sufficient balance to pay for the gas fees for contract creation.
+interface DeploymentConfig {
+  endpoint: string;
+  privateKey: string;
+  contractName: string;
+  deploymentDir: string;
+}
 
-    You can generate a random account with `yarn generate` which will fill DEPLOYER_PRIVATE_KEY
-    with a random private key in the .env file (then used on hardhat.config.ts)
-    You can run the `yarn account` command to check your balance in every network.
-  */
-  const { deployer } = await hre.getNamedAccounts();
-  const { deploy } = hre.deployments;
+function getDeploymentConfig(): DeploymentConfig {
+  return {
+    endpoint: process.env.ENDPOINT || "http://localhost:8547",
+    privateKey: process.env.PRIVATE_KEY || "0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659",
+    contractName: process.env.CONTRACT_NAME || "stylus-hello-world",
+    deploymentDir: process.env.DEPLOYMENT_DIR || "./packages/stylus/deployments",
+  };
+}
 
-  await deploy("YourContract", {
-    from: deployer,
-    // Contract constructor arguments
-    args: [deployer],
-    log: true,
-    // autoMine: can be passed to the deploy function to make the deployment process faster on local networks by
-    // automatically mining the contract deployment transaction. There is no effect on live networks.
-    autoMine: true,
+function ensureDeploymentDirectory(deploymentDir: string): void {
+  const fullPath = path.resolve(__dirname, "..", deploymentDir);
+  if (!fs.existsSync(fullPath)) {
+    console.log(`📁 Creating deployment directory: ${fullPath}`);
+    fs.mkdirSync(fullPath, { recursive: true });
+  }
+}
+
+function executeCommand(command: string, cwd: string, description: string): string {
+  console.log(`\n🔄 ${description}...`);
+  console.log(`Executing: ${command}`);
+
+  try {
+    const output = execSync(command, {
+      cwd,
+      encoding: "utf8",
+      stdio: "pipe",
+    });
+
+    console.log(`✅ ${description} completed successfully!`);
+    return output;
+  } catch (error) {
+    console.error(`❌ ${description} failed:`, error);
+    throw error;
+  }
+}
+
+export default async function deployStylusContract() {
+  console.log("🚀 Starting Stylus contract deployment...");
+
+  const config = getDeploymentConfig();
+
+  console.log(`📡 Using endpoint: ${config.endpoint}`);
+  console.log(`🔑 Using private key: ${config.privateKey.substring(0, 10)}...`);
+  console.log(`📄 Contract name: ${config.contractName}`);
+  console.log(`📁 Deployment directory: ${config.deploymentDir}`);
+
+  try {
+    // Ensure deployment directory exists
+    ensureDeploymentDirectory(config.deploymentDir);
+
+    // Step 1: Deploy the contract using cargo stylus
+    const deployCommand = `cargo stylus deploy --endpoint='${config.endpoint}' --private-key='${config.privateKey}'`;
+    const deployOutput = executeCommand(
+      deployCommand,
+      path.resolve(__dirname, ".."),
+      "Deploying contract with cargo stylus",
+    );
+
+    console.log("Deploy output:", deployOutput);
+
+    // Step 2: Export ABI
+    const exportCommand = `cargo stylus export-abi --json ${config.deploymentDir}/${config.contractName}.json`;
+    const exportOutput = executeCommand(exportCommand, path.resolve(__dirname, ".."), "Exporting ABI");
+
+    console.log("Export output:", exportOutput);
+
+    console.log("\n🎉 Deployment completed successfully!");
+    console.log(`📄 ABI file location: ${config.deploymentDir}/${config.contractName}.json`);
+
+    // Verify the ABI file was created
+    const abiFilePath = path.resolve(__dirname, "..", config.deploymentDir, `${config.contractName}.json`);
+    if (fs.existsSync(abiFilePath)) {
+      console.log(`✅ ABI file verified at: ${abiFilePath}`);
+    } else {
+      console.warn(`⚠️  ABI file not found at expected location: ${abiFilePath}`);
+    }
+  } catch (error) {
+    console.error("❌ Deployment failed:", error);
+    process.exit(1);
+  }
+}
+
+// Allow running this file directly
+if (require.main === module) {
+  deployStylusContract().catch(error => {
+    console.error("Fatal error:", error);
+    process.exit(1);
   });
-
-  // Get the deployed contract to interact with it after deploying.
-  const yourContract = await hre.ethers.getContract<Contract>("YourContract", deployer);
-  console.log("👋 Initial greeting:", await yourContract.greeting());
-};
-
-export default deployYourContract;
-
-// Tags are useful if you have multiple deploy files and only want to run one of them.
-// e.g. yarn deploy --tags YourContract
-deployYourContract.tags = ["YourContract"];
+}
