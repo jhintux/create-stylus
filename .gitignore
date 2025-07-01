@@ -10,6 +10,7 @@ node_modules
 !.yarn/versions
 .eslintcache
 .DS_Store
-.vscode
+.vscode/*
+!.vscode/settings.json
 .idea
 .vercel
