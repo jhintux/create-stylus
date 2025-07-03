@@ -107,13 +107,14 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./packages/stylus
-          file: ./packages/stylus/nitro-devnode/stylus-dev/Dockerfile
+          file: nitro-devnode/stylus-dev/Dockerfile
           target: nitro-node-stylus-dev
           tags: nitro-node-stylus-dev
           build-args: |
             NITRO_NODE_VERSION=v3.5.5-90ee45c
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          load: true
 
       - name: Move cache
         run: |
