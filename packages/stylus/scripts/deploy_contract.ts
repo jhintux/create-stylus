@@ -3,7 +3,8 @@ import { config as dotenvConfig } from "dotenv";
 import prettier from "prettier";
 import * as path from "path";
 import * as fs from "fs";
-import { arbitrum } from "viem/chains";
+import { ethers } from "ethers";
+import { arbitrumNitro } from "../../nextjs/utils/scaffold-eth/chain";
 
 // Load environment variables from .env file
 const envPath = path.resolve(__dirname, "../.env");
@@ -102,7 +103,7 @@ async function generateTsAbi(abiFilePath: string, contractName: string, contract
   const lines = abiTxt.split('\n');
   const extractedAbi = lines.slice(3).join('\n');
 
-  const fileContent = `${arbitrum.id}:{"${contractName}":{address:"${contractAddress}",abi:${extractedAbi}}}`;
+  const fileContent = `${arbitrumNitro.id}:{"${contractName}":{address:"${contractAddress}",abi:${extractedAbi}}}`;
 
   if (!fs.existsSync(TARGET_DIR)) {
     fs.mkdirSync(TARGET_DIR);
@@ -122,10 +123,20 @@ async function generateTsAbi(abiFilePath: string, contractName: string, contract
   console.log(`📝 Updated TypeScript contract definition file on ${TARGET_DIR}deployedContracts.ts`);
 }
 
+function generateContractAddress(): string {
+  // Generate a random private key and derive the address
+  const wallet = ethers.Wallet.createRandom();
+  return wallet.address;
+}
+
 export default async function deployStylusContract() {
   console.log("🚀 Starting Stylus contract deployment...");
 
   const config = getDeploymentConfig();
+
+  // Generate contract address
+  config.contractAddress = generateContractAddress();
+  console.log(`📋 Generated contract address: ${config.contractAddress}`);
 
   console.log(`📡 Using endpoint: ${config.endpoint}`);
   console.log(`🔑 Using private key: ${config.privateKey.substring(0, 10)}...`);
@@ -136,22 +147,15 @@ export default async function deployStylusContract() {
     // Ensure deployment directory exists
     ensureDeploymentDirectory(config.deploymentDir);
 
-    // Step 1: Deploy the contract using cargo stylus
-    const deployCommand = `cargo stylus deploy --endpoint='${config.endpoint}' --private-key='${config.privateKey}'`;
-    const deployOutput = await executeCommand(
+    // Step 1: Deploy the contract using cargo stylus with contract address
+    const deployCommand = `cargo stylus deploy --endpoint='${config.endpoint}' --private-key='${config.privateKey}' --contract-address='${config.contractAddress}' --no-verify`;
+    await executeCommand(
       deployCommand,
       path.resolve(__dirname, ".."),
       "Deploying contract with cargo stylus",
     );
 
-    // Extract contract address from deployment output
-    const addressMatch = deployOutput.match(/deployed code at address:\s*([a-fA-F0-9x]+)/);
-    if (addressMatch && addressMatch[1]) {
-      config.contractAddress = addressMatch[1];
-      console.log(`📋 Contract deployed at address: ${config.contractAddress}`);
-    } else {
-      throw new Error("Could not extract contract address from deployment output");
-    }
+    console.log(`📋 Contract deployed at address: ${config.contractAddress}`);
 
     // Step 2: Export ABI
     const exportCommand = `cargo stylus export-abi --output='${config.deploymentDir}/${config.contractName}.txt' --json`;
@@ -169,9 +173,6 @@ export default async function deployStylusContract() {
     }
 
     // Step 3: Generate Ts ABI
-    if (!config.contractAddress) {
-      throw new Error("Contract address is required for generating TypeScript ABI");
-    }
     await generateTsAbi(abiFilePath, config.contractName, config.contractAddress);
 
   } catch (error) {
