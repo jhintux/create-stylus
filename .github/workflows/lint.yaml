@@ -27,11 +27,90 @@ jobs:
           node-version: ${{ matrix.node }}
           cache: yarn
 
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Install cargo-stylus
+        run: cargo install --force cargo-stylus
+
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Run hardhat node, deploy contracts (& generate contracts typescript output)
-        run: yarn chain & yarn deploy
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Clean up existing containers
+        run: |
+          docker stop nitro-dev || true
+          docker rm nitro-dev || true
+
+      - name: Build Nitro node with Stylus dev dependencies
+        run: |
+          cd packages/stylus
+          docker build . --target nitro-node-stylus-dev \
+            --tag nitro-node-stylus-dev -f stylus-dev/Dockerfile \
+            --build-arg NITRO_NODE_VERSION="v3.5.5-90ee45c"
+
+      - name: Ensure script permissions
+        run: |
+          chmod +x packages/stylus/scripts/start-chain-with-cors.sh
+
+      - name: Start Nitro dev node and deploy contracts
+        env:
+          ENDPOINT: "http://localhost:8547"
+          PRIVATE_KEY: "0xb6b15c8cb491557369f3c7d2c287b053eb229daa9c22138887752191c9520659"
+          CONTRACT_NAME: "stylus-hello-world"
+          DEPLOYMENT_DIR: "./deployments"
+        timeout-minutes: 10
+        run: |
+          cd packages/stylus
+          # Start the chain in background and wait for it to be ready
+          ./scripts/start-chain-with-cors.sh --stylus &
+          CHAIN_PID=$!
+          
+          # Wait for the node to be ready with timeout
+          echo "Waiting for Nitro node to be ready..."
+          TIMEOUT=120
+          COUNTER=0
+          until curl -s -X POST -H "Content-Type: application/json" \
+            --data '{"jsonrpc":"2.0","method":"net_version","params":[],"id":1}' \
+            http://127.0.0.1:8547 | grep -q "result"; do
+            sleep 2
+            COUNTER=$((COUNTER + 2))
+            if [ $COUNTER -ge $TIMEOUT ]; then
+              echo "Timeout waiting for Nitro node to be ready"
+              kill $CHAIN_PID || true
+              exit 1
+            fi
+          done
+          
+          echo "Nitro node is ready, deploying contracts..."
+          
+          # Ensure deployment directory exists
+          mkdir -p deployments
+          
+          # Deploy contracts
+          yarn deploy
+          
+          # Verify deployment artifacts were created
+          if [ ! -f "deployments/stylus-hello-world.txt" ]; then
+            echo "Error: Deployment artifacts not found"
+            kill $CHAIN_PID || true
+            exit 1
+          fi
+          
+          echo "Contract deployment successful!"
+          
+          # Kill the chain process
+          kill $CHAIN_PID || true
 
       - name: Run nextjs lint
         run: yarn next:lint --max-warnings=0
@@ -39,5 +118,20 @@ jobs:
       - name: Check typings on nextjs
         run: yarn next:check-types
 
-      - name: Run hardhat lint
-        run: yarn hardhat:lint --max-warnings=0
+      - name: Run stylus lint
+        run: yarn stylus:lint --max-warnings=0
+
+      - name: Run stylus tests
+        run: yarn stylus:test
+
+      - name: Verify contract definitions
+        run: |
+          # Check if the TypeScript contract definitions were generated
+          if [ ! -f "packages/nextjs/contracts/deployedContracts.ts" ]; then
+            echo "Error: TypeScript contract definitions not found"
+            exit 1
+          fi
+          echo "Contract definitions verified!"
+
+      - name: Build nextjs
+        run: yarn next:build
