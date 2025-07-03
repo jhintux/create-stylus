@@ -29,7 +29,7 @@ if [[ "$STYLUS_MODE" == "true" ]]; then
   echo "Building Nitro node with Stylus dev dependencies..."
   # Build using the specific version
   docker build . --target nitro-node-stylus-dev \
-  --tag nitro-node-stylus-dev  -f stylus-dev/Dockerfile \
+  --tag nitro-node-stylus-dev  -f nitro-devnode/stylus-dev/Dockerfile \
   --build-arg NITRO_NODE_VERSION="${NITRO_NODE_VERSION}"
 
   TARGET_IMAGE="nitro-node-stylus-dev"
