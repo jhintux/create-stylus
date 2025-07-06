@@ -613,6 +613,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/semver@npm:^7.7.0":
+  version: 7.7.0
+  resolution: "@types/semver@npm:7.7.0"
+  checksum: d488eaeddb23879a0a8a759bed667e1a76cb0dd4d23e3255538e24c189db387357953ca9e7a3bda2bb7f95e84cac8fe0db4fbe6b3456e893043337732d1d23cc
+  languageName: node
+  linkType: hard
+
 "@types/through@npm:*":
   version: 0.0.33
   resolution: "@types/through@npm:0.0.33"
@@ -1158,6 +1165,7 @@ __metadata:
     "@types/inquirer": 9.0.3
     "@types/ncp": 2.0.5
     "@types/node": 18.16.0
+    "@types/semver": ^7.7.0
     "@types/validate-npm-package-name": 4.0.2
     arg: 5.0.2
     chalk: 5.2.0

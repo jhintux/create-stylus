@@ -1,14 +1,12 @@
 pre-commit:
   parallel: true
+  exclude: ["templates/**", "node_modules/**"]
   commands:
-    type-check:
-      glob: "src/**/*.ts"
-      run: yarn type-check
     lint:
-      glob: "*.{js,ts,md}"
+      glob: "src/**/*.{js,ts,md}"
       run: yarn eslint --fix {staged_files}
     format:
-      glob: "*.{js,ts,md,json}"
+      glob: "src/**/*.{js,ts,md,json}"
       run: |
         yarn prettier --write {staged_files}
         git add {staged_files}

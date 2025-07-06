@@ -5,7 +5,7 @@ import { promisify } from "util";
 import { execa } from "execa";
 import ncp from "ncp";
 import { fileURLToPath } from "url";
-import { BASE_DIR, SOLIDITY_FRAMEWORKS, SOLIDITY_FRAMEWORKS_DIR } from "../utils/consts";
+import { BASE_DIR } from "../utils/consts";
 import chalk from "chalk";
 
 const EXTERNAL_EXTENSIONS_DIR = "externalExtensions";
@@ -92,11 +92,6 @@ const findTemplateFiles = async (dir: string, templates: Set<string>) => {
       // Normalize the relative path by stripping the initial parts
       if (pathSegments[0] === BASE_DIR) {
         relativePath = pathSegments.slice(1).join(path.sep);
-      } else if (pathSegments[0] === SOLIDITY_FRAMEWORKS_DIR) {
-        const framework = pathSegments[1];
-        if (Object.values(SOLIDITY_FRAMEWORKS).includes(framework as any)) {
-          relativePath = pathSegments.slice(2).join(path.sep);
-        }
       }
 
       templates.add(relativePath);
@@ -169,10 +164,7 @@ const copyChanges = async (
     const isRootPackageJson = pathSegmentsOfFile.length === 1 && pathSegmentsOfFile[0] === PACKAGE_JSON_FILE;
     const isNextJsPackageJson =
       pathSegmentsOfFile.includes(NEXTJS_DIR) && pathSegmentsOfFile.includes(PACKAGE_JSON_FILE);
-    const isSolidityFrameworkPackageJson =
-      (pathSegmentsOfFile.includes(SOLIDITY_FRAMEWORKS.HARDHAT) ||
-        pathSegmentsOfFile.includes(SOLIDITY_FRAMEWORKS.FOUNDRY)) &&
-      pathSegmentsOfFile.includes(PACKAGE_JSON_FILE);
+    const isSolidityFrameworkPackageJson = pathSegmentsOfFile.includes(PACKAGE_JSON_FILE);
 
     if (isRootPackageJson || isNextJsPackageJson || isSolidityFrameworkPackageJson) {
       prettyLog.warning(`Skipping file: ${file}`, 2);
@@ -181,11 +173,7 @@ const copyChanges = async (
       continue;
     }
 
-    const coreFilesPath = [
-      path.join(templateDirectory, BASE_DIR, file),
-      path.join(templateDirectory, SOLIDITY_FRAMEWORKS_DIR, SOLIDITY_FRAMEWORKS.HARDHAT, file),
-      path.join(templateDirectory, SOLIDITY_FRAMEWORKS_DIR, SOLIDITY_FRAMEWORKS.FOUNDRY, file),
-    ];
+    const coreFilesPath = [path.join(templateDirectory, BASE_DIR, file)];
     if (coreFilesPath.some(fs.existsSync)) {
       prettyLog.error(`Ignored file: ${file}`, 2);
       prettyLog.info("Only new files can be added", 3);
