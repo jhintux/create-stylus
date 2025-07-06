@@ -52,15 +52,15 @@ function executeCommand(command: string, cwd: string, description: string): Prom
     const childProcess = spawn(command, [], {
       cwd,
       shell: true,
-      stdio: ['inherit', 'pipe', 'pipe']
+      stdio: ["inherit", "pipe", "pipe"],
     });
 
-    let output = '';
-    let errorOutput = '';
+    let output = "";
+    let errorOutput = "";
 
     // Handle stdout
     if (childProcess.stdout) {
-      childProcess.stdout.on('data', (data: Buffer) => {
+      childProcess.stdout.on("data", (data: Buffer) => {
         const chunk = data.toString();
         output += chunk;
         process.stdout.write(chunk); // Print live output
@@ -69,7 +69,7 @@ function executeCommand(command: string, cwd: string, description: string): Prom
 
     // Handle stderr
     if (childProcess.stderr) {
-      childProcess.stderr.on('data', (data: Buffer) => {
+      childProcess.stderr.on("data", (data: Buffer) => {
         const chunk = data.toString();
         errorOutput += chunk;
         process.stderr.write(chunk); // Print live error output
@@ -77,7 +77,7 @@ function executeCommand(command: string, cwd: string, description: string): Prom
     }
 
     // Handle process completion
-    childProcess.on('close', (code: number | null) => {
+    childProcess.on("close", (code: number | null) => {
       if (code === 0) {
         console.log(`\n✅ ${description} completed successfully!`);
         resolve(output);
@@ -88,7 +88,7 @@ function executeCommand(command: string, cwd: string, description: string): Prom
     });
 
     // Handle process errors
-    childProcess.on('error', (error: Error) => {
+    childProcess.on("error", (error: Error) => {
       console.error(`\n❌ ${description} failed:`, error);
       reject(error);
     });
@@ -98,10 +98,10 @@ function executeCommand(command: string, cwd: string, description: string): Prom
 async function generateTsAbi(abiFilePath: string, contractName: string, contractAddress: string) {
   const TARGET_DIR = "../nextjs/contracts/";
   const abiTxt = fs.readFileSync(abiFilePath, "utf8");
-  
+
   // Extract from 4th row to the end
-  const lines = abiTxt.split('\n');
-  const extractedAbi = lines.slice(3).join('\n');
+  const lines = abiTxt.split("\n");
+  const extractedAbi = lines.slice(3).join("\n");
 
   const fileContent = `${arbitrumNitro.id}:{"${contractName}":{address:"${contractAddress}",abi:${extractedAbi}}}`;
 
@@ -149,11 +149,7 @@ export default async function deployStylusContract() {
 
     // Step 1: Deploy the contract using cargo stylus with contract address
     const deployCommand = `cargo stylus deploy --endpoint='${config.endpoint}' --private-key='${config.privateKey}' --contract-address='${config.contractAddress}' --no-verify`;
-    await executeCommand(
-      deployCommand,
-      path.resolve(__dirname, ".."),
-      "Deploying contract with cargo stylus",
-    );
+    await executeCommand(deployCommand, path.resolve(__dirname, ".."), "Deploying contract with cargo stylus");
 
     console.log(`📋 Contract deployed at address: ${config.contractAddress}`);
 
@@ -174,7 +170,6 @@ export default async function deployStylusContract() {
 
     // Step 3: Generate Ts ABI
     await generateTsAbi(abiFilePath, config.contractName, config.contractAddress);
-
   } catch (error) {
     console.error("❌ Deployment failed:", error);
     process.exit(1);

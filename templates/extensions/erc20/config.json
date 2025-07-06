@@ -1,0 +1,5 @@
+{
+  "name": "ERC20 Token",
+  "value": "erc20",
+  "description": "Standard ERC20 token implementation"
+} 

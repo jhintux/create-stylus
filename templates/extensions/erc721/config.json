@@ -1,0 +1,5 @@
+{
+  "name": "ERC721 NFT",
+  "value": "erc721",
+  "description": "Standard ERC721 NFT implementation"
+} 

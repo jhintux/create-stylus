@@ -1,42 +1,69 @@
 {
-  "name": "se-2",
-  "version": "0.0.1",
-  "private": true,
-  "workspaces": {
-    "packages": [
-      "packages/stylus",
-      "packages/nextjs"
-    ]
+  "name": "create-stylus",
+  "version": "0.2.4",
+  "description": "Create a Scaffold-Stylus app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/scaffold-eth/create-stylus.git"
   },
+  "main": "dist/cli.js",
+  "type": "module",
+  "bin": "bin/create-stylus-dapp.js",
   "scripts": {
-    "account": "yarn workspace @se-2/stylus account",
-    "chain": "yarn workspace @se-2/stylus chain",
-    "fork": "yarn workspace @se-2/stylus fork",
-    "deploy": "yarn workspace @se-2/stylus deploy",
-    "verify": "yarn workspace @se-2/stylus verify",
-    "stylus-verify": "yarn workspace @se-2/stylus stylus-verify",
-    "compile": "yarn workspace @se-2/stylus compile",
-    "generate": "yarn workspace @se-2/stylus generate",
-    "flatten": "yarn workspace @se-2/stylus flatten",
-    "stylus:lint": "yarn workspace @se-2/stylus lint",
-    "stylus:lint-staged": "yarn workspace @se-2/stylus lint-staged",
-    "stylus:format": "yarn workspace @se-2/stylus format",
-    "stylus:test": "yarn workspace @se-2/stylus test",
-    "test": "yarn stylus:test",
-    "format": "yarn next:format && yarn stylus:format",
-    "start": "yarn workspace @se-2/nextjs dev",
-    "next:lint": "yarn workspace @se-2/nextjs lint",
-    "next:format": "yarn workspace @se-2/nextjs format",
-    "next:check-types": "yarn workspace @se-2/nextjs check-types",
-    "next:build": "yarn workspace @se-2/nextjs build",
-    "postinstall": "husky install",
-    "precommit": "lint-staged",
-    "vercel": "yarn workspace @se-2/nextjs vercel",
-    "vercel:yolo": "yarn workspace @se-2/nextjs vercel:yolo"
+    "build": "rollup -c rollup.config.js",
+    "build:dev": "yarn build && rollup -c src/dev/rollup.config.js",
+    "create-extension": "node dist/create-extension/create-extension.js",
+    "dev": "rollup -c rollup.config.js --watch",
+    "cli": "node bin/create-stylus-dapp.js",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "./test/cli.test.sh",
+    "test:cli": "npm run build && ./test/cli.test.sh",
+    "test:quick": "node bin/create-stylus-dapp.js test-quick --extension hello-world --skip-install && rm -rf test-quick",
+    "type-check": "tsc --noEmit",
+    "changeset:release": "yarn build && changeset publish"
   },
-  "packageManager": "yarn@3.2.3",
+  "keywords": [
+    "cli",
+    "arbitrum",
+    "scaffold-stylus",
+    "wagmi",
+    "foundry",
+    "viem",
+    "rainbowkit",
+    "stylus"
+  ],
+  "license": "MIT",
   "devDependencies": {
-    "husky": "^8.0.1",
-    "lint-staged": "^13.0.3"
-  }
+    "@eslint/js": "^9.15.0",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-typescript": "11.1.0",
+    "@types/inquirer": "9.0.3",
+    "@types/ncp": "2.0.5",
+    "@types/node": "18.16.0",
+    "@types/validate-npm-package-name": "4.0.2",
+    "eslint": "^9.15.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "lefthook": "^1.6.16",
+    "prettier": "^3.3.3",
+    "rollup": "3.21.0",
+    "rollup-plugin-auto-external": "2.0.0",
+    "tslib": "2.5.0",
+    "typescript": "^5.6.3",
+    "typescript-eslint": "^8.15.0"
+  },
+  "dependencies": {
+    "@changesets/cli": "^2.26.2",
+    "arg": "5.0.2",
+    "chalk": "5.2.0",
+    "execa": "7.1.1",
+    "inquirer": "9.2.0",
+    "listr2": "^8.2.1",
+    "merge-packages": "^0.1.6",
+    "ncp": "2.0.0",
+    "semver": "^7.7.2",
+    "validate-npm-package-name": "6.0.0"
+  },
+  "packageManager": "yarn@3.5.0"
 }

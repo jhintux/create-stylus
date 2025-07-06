@@ -1,0 +1,6 @@
+[submodule "packages/stylus/proxy/lib/forge-std"]
+	path = packages/stylus/proxy/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
+[submodule "packages/stylus/proxy/lib/openzeppelin-contracts"]
+	path = packages/stylus/proxy/lib/openzeppelin-contracts
+	url = https://github.com/openzeppelin/openzeppelin-contracts

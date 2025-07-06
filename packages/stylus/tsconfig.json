@@ -29,13 +29,6 @@
       "@/*": ["scripts/*"]
     }
   },
-  "include": [
-    "scripts/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
-} 
+  "include": ["scripts/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+}
