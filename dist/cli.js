@@ -388,6 +388,19 @@ const handleReadmeFile = (targetReadmePath, extensionReadmePath) => {
         console.warn(`Warning: Failed to handle README file: ${String(error)}`);
     }
 };
+// Helper function to copy file if it exists in extension
+const copyFileIfExists = (extensionPath, targetPath, fileName) => {
+    try {
+        const extensionFilePath = path.join(extensionPath, fileName);
+        const targetFilePath = path.join(targetPath, fileName);
+        if (fs.existsSync(extensionFilePath)) {
+            fs.copyFileSync(extensionFilePath, targetFilePath);
+        }
+    }
+    catch (error) {
+        console.warn(`Warning: Failed to copy ${fileName}: ${String(error)}`);
+    }
+};
 const copyBaseFiles = async (basePath, targetDir, { dev: isDev }) => {
     await copyOrLink(basePath, targetDir, {
         clobber: false,
@@ -486,19 +499,13 @@ const copyExtensionFiles = async ({ dev: isDev }, extensionPath, targetDir) => {
                 if (!fs.existsSync(targetSrcPath)) {
                     fs.mkdirSync(targetSrcPath, { recursive: true });
                 }
-                // Copy lib.rs if it exists in extension
-                const extensionLibRsPath = path.join(extensionSrcPath, "lib.rs");
-                const targetLibRsPath = path.join(targetSrcPath, "lib.rs");
-                if (fs.existsSync(extensionLibRsPath)) {
-                    fs.copyFileSync(extensionLibRsPath, targetLibRsPath);
-                }
-                // Copy main.rs if it exists in extension
-                const extensionMainRsPath = path.join(extensionSrcPath, "main.rs");
-                const targetMainRsPath = path.join(targetSrcPath, "main.rs");
-                if (fs.existsSync(extensionMainRsPath)) {
-                    fs.copyFileSync(extensionMainRsPath, targetMainRsPath);
-                }
+                // Copy Rust source files
+                copyFileIfExists(extensionSrcPath, targetSrcPath, "lib.rs");
+                copyFileIfExists(extensionSrcPath, targetSrcPath, "main.rs");
             }
+            // Copy Rust project files
+            copyFileIfExists(extensionPackagePath, packagePath, "Cargo.toml");
+            copyFileIfExists(extensionPackagePath, packagePath, "Cargo.lock");
         });
     }
 };
